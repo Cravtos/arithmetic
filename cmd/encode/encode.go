@@ -1,0 +1,157 @@
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"github.com/cravtos/arithmetic/internal/pkg/bitio"
+	"github.com/cravtos/arithmetic/internal/pkg/table"
+	"log"
+	"os"
+	"path/filepath"
+	"time"
+)
+
+// Interval delimiters
+const intervalBitsUsed = 40
+const top uint64 = (1 << intervalBitsUsed) - 1
+const firstQuart = (top / 4) + 1
+const half = (top / 2) + 1
+const thirdQuart = half + firstQuart
+
+func bitsPlusFollow(to *bitio.Writer, bit uint64, bitsToFollow uint64) (err error) {
+	if err = to.WriteBits(bit, 1); err != nil {
+		return err
+	}
+
+	flipped := uint64(1)
+	if bit == 1 {
+		flipped = 0
+	}
+
+	for bitsToFollow > 0 {
+		if err = to.WriteBits(flipped, 1); err != nil {
+			return err
+		}
+		bitsToFollow--
+	}
+
+	return err
+}
+
+func main() {
+	begin := time.Now()
+
+	// Check if file is specified as argument
+	if len(os.Args) != 2 {
+		fmt.Printf("Usage: %v file_to_compress\n", os.Args[0])
+		fmt.Println("Output is file_to_compress.arith")
+		return
+	}
+
+	// Open file to read data
+	inFilePath := filepath.Clean(os.Args[1])
+	log.Println("opening file", inFilePath)
+	inFile, err := os.Open(inFilePath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "can't open file %s\n", inFilePath)
+		return
+	}
+	defer inFile.Close()
+
+	// Open file to write compressed data
+	outFilePath := inFilePath + ".arith"
+	log.Println("creating file", outFilePath)
+	outFile, err := os.Create(outFilePath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "can't create file %s\n", outFilePath)
+		return
+	}
+	defer outFile.Close()
+
+	in := bufio.NewReader(inFile)
+	out := bitio.NewWriter(outFile)
+	t := table.NewTable()
+
+	// Get information for header
+	inStat, err := inFile.Stat()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "couldn't obtain stat for input file: %v\n", err)
+		return
+	}
+	inSize := uint64(inStat.Size())
+
+	// Write header
+	log.Printf("writing header (number of encoded symbols): %v", inSize)
+	if err := out.WriteBits(inSize, 64); err != nil {
+		fmt.Fprintf(os.Stderr, "couldn't write header to output file: %v\n", err)
+		return
+	}
+
+	// Begin compressing
+	l := uint64(0)
+	h := top
+	bitsToFollow := uint64(0)
+
+	log.Println("starting compression")
+	v, err := in.ReadByte()
+	for err == nil {
+		lPrev := l
+		hPrev := h
+		denom := t.GetInterval(table.ABCSize - 1)
+
+		l = lPrev + t.GetInterval(v - 1) * (hPrev - lPrev + 1) / denom
+		h = lPrev + t.GetInterval(v) * (hPrev - lPrev + 1) / denom - 1
+
+		for {
+			if h < half {
+				if err := bitsPlusFollow(out, 0, bitsToFollow); err != nil {
+					fmt.Fprintf(os.Stderr, "got error while writing bits to output file: %v\n", err)
+					return
+				}
+				bitsToFollow = 0
+			} else if l >= half {
+				if err := bitsPlusFollow(out, 1, bitsToFollow); err != nil {
+					fmt.Fprintf(os.Stderr, "got error while writing bits to output file: %v\n", err)
+					return
+				}
+				bitsToFollow = 0
+				l -= half
+				h -= half
+			} else if l >= firstQuart && h < thirdQuart {
+				bitsToFollow++
+				l -= firstQuart
+				h -= firstQuart
+			} else {
+				break
+			}
+
+			l <<= 1
+			h <<= 1
+			h += 1
+		}
+
+		t.UpdateCount(v)
+		v, err = in.ReadByte()
+	}
+
+	// Flush everything to file
+	if err := out.Flush(); err != nil {
+		fmt.Fprintf(os.Stderr, "got error while flushing: %v\n", err)
+		return
+	}
+
+	log.Println("finished. see", outFilePath)
+
+	outStat, err := outFile.Stat()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "couldn't obtain stat for output file: %v\n", err)
+		return
+	}
+
+	outSize := outStat.Size()
+	ratio := float32(inStat.Size()) / float32(outStat.Size())
+	log.Printf("input size: %v, output size: %v, ratio: %v\n", inSize, outSize, ratio)
+
+	duration := time.Since(begin)
+	log.Printf("time taken: %v\n", duration)
+}
