@@ -75,7 +75,7 @@ func main() {
 
 	l := uint64(0)
 	h := top
-	for i := uint64(0); i < nEncoded; i++ {
+	for i := uint64(1); i <= nEncoded; i++ {
 		denom := t.GetInterval(table.ABCSize - 1)
 
 		delta := h - l + 1
@@ -118,6 +118,9 @@ func main() {
 		}
 
 		t.UpdateCount(symbol)
+		if i%config.UpdateRangesRate == 0 {
+			t.UpdateRanges(0)
+		}
 		if err = out.WriteByte(symbol); err != nil {
 			fmt.Fprintf(os.Stderr, "got error while writting to output file: %v\n", err)
 			return

@@ -11,3 +11,6 @@ const CountDenominator = 2
 
 // CountBitsUsed determines bits for maximal sum of all symbol counts
 const CountBitsUsed = 16
+
+// UpdateRangesRate determines how often ranges are recalculated
+const UpdateRangesRate = 1000

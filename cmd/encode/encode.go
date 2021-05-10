@@ -98,6 +98,7 @@ func main() {
 
 	log.Println("starting compression")
 	v, err := in.ReadByte()
+	nEncoded := 0
 	for err == nil {
 		denom := t.GetInterval(table.ABCSize - 1)
 		delta := h - l + 1
@@ -138,6 +139,10 @@ func main() {
 		}
 
 		t.UpdateCount(v)
+		nEncoded += 1
+		if nEncoded%config.UpdateRangesRate == 0 {
+			t.UpdateRanges(0)
+		}
 		v, err = in.ReadByte()
 	}
 

@@ -27,14 +27,15 @@ func NewTable() *Table {
 	return t
 }
 
-// updateRanges makes symbols ranges valid
-func (t *Table) updateRanges(fromSymbol uint8) {
+// UpdateRanges makes symbols ranges valid
+func (t *Table) UpdateRanges(fromSymbol uint8) {
 	for i := uint(fromSymbol) + 1; i <= ABCSize; i++ {
 		t.interval[i] = t.interval[i-1] + t.count[i]
 	}
 }
 
-// UpdateCount updates symbol count and ranges
+// UpdateCount updates symbol count and normalizes them when t.totalCount >= maxTotalCount
+// Also updates ranges after normalizing
 // If Table.totalCount is too big, Table.count are normalized
 func (t *Table) UpdateCount(symbol uint8) {
 	t.count[symbol+1]++
@@ -53,11 +54,9 @@ func (t *Table) UpdateCount(symbol uint8) {
 			t.totalCount += t.count[i]
 		}
 
-		t.updateRanges(0)
+		t.UpdateRanges(0)
 		return
 	}
-
-	t.updateRanges(symbol)
 }
 
 // GetInterval returns interval end for given symbol
