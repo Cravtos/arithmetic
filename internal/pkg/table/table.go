@@ -2,10 +2,10 @@ package table
 
 import "github.com/cravtos/arithmetic/internal/pkg/config"
 
-// Value borders
+// maxTotalCount is the maximum value of the sum of counts
 const maxTotalCount uint64 = (1 << config.CountBitsUsed) - 1
 
-// Size of the alphabet
+// ABCSize is the size of the alphabet
 const ABCSize = 256
 
 // Table holding counts of characters
