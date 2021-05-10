@@ -3,20 +3,21 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"github.com/cravtos/arithmetic/internal/pkg/bitio"
-	"github.com/cravtos/arithmetic/internal/pkg/table"
 	"log"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/cravtos/arithmetic/internal/pkg/bitio"
+	"github.com/cravtos/arithmetic/internal/pkg/config"
+	"github.com/cravtos/arithmetic/internal/pkg/table"
 )
 
 // Interval delimiters
-const intervalBitsUsed = 40
-const top uint64 = (1 << intervalBitsUsed) - 1
-const firstQuart = (top / 4) + 1
-const half = (top / 2) + 1
-const thirdQuart = half + firstQuart
+const top uint64 = (1 << config.IntervalBitsUsed) - 1
+const firstQuart = (top + 1) / 4
+const half = firstQuart * 2
+const thirdQuart = firstQuart * 3
 
 func bitsPlusFollow(to *bitio.Writer, bit uint64, bitsToFollow uint64) (err error) {
 	if err = to.WriteBits(bit, 1); err != nil {
@@ -95,12 +96,10 @@ func main() {
 	log.Println("starting compression")
 	v, err := in.ReadByte()
 	for err == nil {
-		lPrev := l
-		hPrev := h
 		denom := t.GetInterval(table.ABCSize - 1)
-
-		l = lPrev + t.GetInterval(v - 1) * (hPrev - lPrev + 1) / denom
-		h = lPrev + t.GetInterval(v) * (hPrev - lPrev + 1) / denom - 1
+		delta := h - l + 1
+		h = l + t.GetInterval(v)*delta/denom - 1
+		l = l + t.GetInterval(v-1)*delta/denom
 
 		for {
 			if h < half {
@@ -128,10 +127,36 @@ func main() {
 			l <<= 1
 			h <<= 1
 			h += 1
+
+			if l&top != l || h&top != h {
+				_, _ = fmt.Fprintln(os.Stderr, "got overflow")
+				return
+			}
 		}
 
 		t.UpdateCount(v)
 		v, err = in.ReadByte()
+	}
+
+	// Encode last interval
+	bitsToFollow += 1
+	if l < firstQuart {
+		if err := bitsPlusFollow(out, 0, bitsToFollow); err != nil {
+			fmt.Fprintf(os.Stderr, "got error while writing bits to output file: %v\n", err)
+			return
+		}
+	} else {
+		if err := bitsPlusFollow(out, 1, bitsToFollow); err != nil {
+			fmt.Fprintf(os.Stderr, "got error while writing bits to output file: %v\n", err)
+			return
+		}
+	}
+	bitsToFollow = 0
+
+	// Write out full interval
+	if err = out.WriteBits(l, config.IntervalBitsUsed); err != nil {
+		fmt.Fprintf(os.Stderr, "got error while writing bits to output file: %v\n", err)
+		return
 	}
 
 	// Flush everything to file
