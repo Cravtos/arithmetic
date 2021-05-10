@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/pkg/profile"
+
 	"github.com/cravtos/arithmetic/internal/pkg/bitio"
 	"github.com/cravtos/arithmetic/internal/pkg/config"
 	"github.com/cravtos/arithmetic/internal/pkg/table"
@@ -20,6 +22,7 @@ const half = firstQuart * 2
 const thirdQuart = firstQuart * 3
 
 func main() {
+	defer profile.Start(profile.ProfilePath("./profiling/decode")).Stop()
 	begin := time.Now()
 
 	// Check if file is specified as argument
@@ -79,8 +82,8 @@ func main() {
 		interval := ((value-l+1)*denom - 1) / delta
 		symbol := t.GetSymbol(interval)
 
-		h = l + t.GetInterval(symbol)*delta/denom - 1
-		l = l + t.GetInterval(symbol-1)*delta/denom
+		h = l + t.GetInterval(int(symbol))*delta/denom - 1
+		l = l + t.GetInterval(int(symbol)-1)*delta/denom
 
 		for {
 			if h < half {

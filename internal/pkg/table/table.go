@@ -61,8 +61,8 @@ func (t *Table) UpdateCount(symbol uint8) {
 }
 
 // GetInterval returns interval end for given symbol
-func (t *Table) GetInterval(symbol uint8) uint64 {
-	return t.interval[uint(symbol)+1]
+func (t *Table) GetInterval(symbol int) uint64 {
+	return t.interval[symbol+1]
 }
 
 // GetSymbol returns symbol with corresponding interval

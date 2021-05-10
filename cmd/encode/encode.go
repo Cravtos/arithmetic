@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/pkg/profile"
+
 	"github.com/cravtos/arithmetic/internal/pkg/bitio"
 	"github.com/cravtos/arithmetic/internal/pkg/config"
 	"github.com/cravtos/arithmetic/internal/pkg/table"
@@ -40,6 +42,7 @@ func bitsPlusFollow(to *bitio.Writer, bit uint64, bitsToFollow uint64) (err erro
 }
 
 func main() {
+	defer profile.Start(profile.ProfilePath("./profiling/encode/")).Stop()
 	begin := time.Now()
 
 	// Check if file is specified as argument
@@ -98,8 +101,8 @@ func main() {
 	for err == nil {
 		denom := t.GetInterval(table.ABCSize - 1)
 		delta := h - l + 1
-		h = l + t.GetInterval(v)*delta/denom - 1
-		l = l + t.GetInterval(v-1)*delta/denom
+		h = l + t.GetInterval(int(v))*delta/denom - 1
+		l = l + t.GetInterval(int(v)-1)*delta/denom
 
 		for {
 			if h < half {
@@ -129,7 +132,7 @@ func main() {
 			h += 1
 
 			if l&top != l || h&top != h {
-				_, _ = fmt.Fprintln(os.Stderr, "got overflow")
+				_, _ = fmt.Fprintf(os.Stderr, "got overflow\n")
 				return
 			}
 		}
