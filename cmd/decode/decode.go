@@ -6,9 +6,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"time"
-
-	"github.com/pkg/profile"
 
 	"github.com/icza/bitio"
 	"github.com/cravtos/arithmetic/internal/pkg/config"
