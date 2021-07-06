@@ -17,23 +17,20 @@ const half = firstQuart * 2
 const thirdQuart = firstQuart * 3
 
 func bitsPlusFollow(to *bitio.Writer, bit uint64, bitsToFollow uint64) (err error) {
-	if err = to.WriteBits(bit, 1); err != nil {
-		return err
-	}
+	to.TryWriteBitsUnsafe(bit, 1)
 
 	flipped := uint64(1)
 	if bit == 1 {
 		flipped = 0
 	}
 
+
 	for bitsToFollow > 0 {
-		if err = to.WriteBits(flipped, 1); err != nil {
-			return err
-		}
+		to.TryWriteBitsUnsafe(flipped, 1)
 		bitsToFollow--
 	}
 
-	return err
+	return to.TryError
 }
 
 func Encode(inFile *os.File, outFile *os.File) (err error) {
@@ -50,7 +47,7 @@ func Encode(inFile *os.File, outFile *os.File) (err error) {
 	inSize := uint64(inStat.Size())
 
 	// Write header
-	if err := w.WriteBits(inSize, 64); err != nil {
+	if err := w.WriteBitsUnsafe(inSize, 64); err != nil {
 		return err
 	}
 
@@ -118,7 +115,7 @@ func Encode(inFile *os.File, outFile *os.File) (err error) {
 	}
 	bitsToFollow = 0
 
-	// Write w full interval
+	// Write full interval
 	if err = w.WriteBits(l, config.IntervalBitsUsed); err != nil {
 		return err
 	}
