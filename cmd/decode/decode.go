@@ -10,7 +10,7 @@ import (
 
 	"github.com/pkg/profile"
 
-	"github.com/cravtos/arithmetic/internal/pkg/bitio"
+	"github.com/icza/bitio"
 	"github.com/cravtos/arithmetic/internal/pkg/config"
 	"github.com/cravtos/arithmetic/internal/pkg/table"
 )

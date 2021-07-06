@@ -10,9 +10,9 @@ import (
 
 	"github.com/pkg/profile"
 
-	"github.com/cravtos/arithmetic/internal/pkg/bitio"
 	"github.com/cravtos/arithmetic/internal/pkg/config"
 	"github.com/cravtos/arithmetic/internal/pkg/table"
+	"github.com/icza/bitio"
 )
 
 // Interval delimiters
@@ -168,7 +168,7 @@ func main() {
 	}
 
 	// Flush everything to file
-	if err := out.Flush(); err != nil {
+	if err := out.Close(); err != nil {
 		fmt.Fprintf(os.Stderr, "got error while flushing: %v\n", err)
 		return
 	}
