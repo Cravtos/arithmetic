@@ -22,8 +22,6 @@ const half = firstQuart * 2
 const thirdQuart = firstQuart * 3
 
 func main() {
-	defer profile.Start(profile.ProfilePath("./profiling/decode")).Stop()
-	begin := time.Now()
 
 	// Check if file is specified as argument
 	if len(os.Args) != 2 {
@@ -151,7 +149,4 @@ func main() {
 	outSize := outStat.Size()
 	ratio := float32(outStat.Size()) / float32(inStat.Size())
 	log.Printf("input size: %v, output size: %v, ratio: %v\n", inSize, outSize, ratio)
-
-	duration := time.Since(begin)
-	log.Printf("time taken: %v\n", duration)
 }

@@ -3,16 +3,12 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"log"
-	"os"
-	"path/filepath"
-	"time"
-
-	"github.com/pkg/profile"
-
 	"github.com/cravtos/arithmetic/internal/pkg/config"
 	"github.com/cravtos/arithmetic/internal/pkg/table"
 	"github.com/icza/bitio"
+	"log"
+	"os"
+	"path/filepath"
 )
 
 // Interval delimiters
@@ -42,8 +38,6 @@ func bitsPlusFollow(to *bitio.Writer, bit uint64, bitsToFollow uint64) (err erro
 }
 
 func main() {
-	defer profile.Start(profile.ProfilePath("./profiling/encode/")).Stop()
-	begin := time.Now()
 
 	// Check if file is specified as argument
 	if len(os.Args) != 2 {
@@ -184,7 +178,4 @@ func main() {
 	outSize := outStat.Size()
 	ratio := float32(inStat.Size()) / float32(outStat.Size())
 	log.Printf("input size: %v, output size: %v, ratio: %v\n", inSize, outSize, ratio)
-
-	duration := time.Since(begin)
-	log.Printf("time taken: %v\n", duration)
 }

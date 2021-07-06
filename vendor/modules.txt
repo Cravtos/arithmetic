@@ -1,0 +1,6 @@
+# github.com/icza/bitio v1.0.0
+## explicit
+github.com/icza/bitio
+# github.com/pkg/profile v1.6.0
+## explicit
+github.com/pkg/profile
