@@ -42,13 +42,13 @@ func main() {
 	err = arithmetic.Decode(inFile, outFile)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "got error while decoding: %v\n", err)
-		return
+		os.Exit(1)
 	}
 
 	if *printRatio == true {
 		if err := helpers.PrintRatio(inFile, outFile); err != nil {
 			fmt.Fprintf(os.Stderr, "got error while getting compression ratio: %v\n", err)
-			return
+			os.Exit(2)
 		}
 	}
 }
