@@ -1,4 +1,2 @@
 .idea/
-!tests/data/compress_me.txt
-tests/data/*
 bin/
