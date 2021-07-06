@@ -4,8 +4,8 @@ YELLOW=\033[0;33m
 NC=\033[0m
 
 ORIGINAL=./tests/data/compress_me.txt
-ENCODED=./tests/data/compress_me.txt.arith
-DECODED=./tests/data/compress_me.txt.arith.decoded
+ENCODED=./tests/data/compress_me.encoded
+DECODED=./tests/data/compress_me.decoded
 
 all: clean build test
 
@@ -20,9 +20,9 @@ build:
 test:
 	@echo "${YELLOW}Testing on compress_me${NC}"
 	@echo "${RED}Encoding${NC}"
-	./bin/encode ${ORIGINAL}
+	./bin/encode -input ${ORIGINAL} -output ${ENCODED}
 	@echo "${RED}Decoding${NC}"
-	./bin/decode ${ENCODED}
+	./bin/decode -input ${ENCODED} -output ${DECODED}
 
 	@echo "${YELLOW}Looking at differences...${NC}"
 	@if cmp -s "${ORIGINAL}" "${DECODED}"; then \

@@ -1,41 +1,41 @@
 package main
 
 import (
+	"flag"
 	"fmt"
-	"github.com/cravtos/arithmetic/internal/pkg/arithmetic"
-	"log"
 	"os"
-	"path/filepath"
+
+	"github.com/cravtos/arithmetic/internal/pkg/arithmetic"
+	"github.com/cravtos/arithmetic/internal/pkg/helpers"
 )
 
-
-
 func main() {
+	inPath := flag.String("input", "", "File to encode.")
+	outPath := flag.String("output", "", "Output file.")
+	printRatio := flag.Bool("pr", false, "Print compression ratio.")
+
+	flag.Parse()
 
 	// Check if file is specified as argument
-	if len(os.Args) != 2 {
-		fmt.Printf("Usage: %v file_to_decompress\n", os.Args[0])
-		fmt.Println("Output is file_to_compress.decoded")
-		return
+	if *inPath == "" || *outPath == "" {
+		fmt.Fprintln(os.Stderr, "specify both input and output files path!")
+		flag.Usage()
+		os.Exit(1)
 	}
 
 	// Open file to read data
-	inFilePath := filepath.Clean(os.Args[1])
-	log.Println("opening file", inFilePath)
-	inFile, err := os.Open(inFilePath)
+	inFile, err := os.Open(*inPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "can't open file %s\n", inFilePath)
-		return
+		fmt.Fprintf(os.Stderr, "can't open file %s\n", *inPath)
+		os.Exit(1)
 	}
 	defer inFile.Close()
 
 	// Open file to write decompressed data
-	outFilePath := inFilePath + ".decoded"
-	log.Println("creating file", outFilePath)
-	outFile, err := os.Create(outFilePath)
+	outFile, err := os.Create(*outPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "can't create file %s\n", outFilePath)
-		return
+		fmt.Fprintf(os.Stderr, "can't create file %s\n", *outPath)
+		os.Exit(1)
 	}
 	defer outFile.Close()
 
@@ -45,21 +45,10 @@ func main() {
 		return
 	}
 
-	// Get information for header
-	inStat, err := inFile.Stat()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "couldn't obtain stat for input file: %v\n", err)
-		return
+	if *printRatio == true {
+		if err := helpers.PrintRatio(inFile, outFile); err != nil {
+			fmt.Fprintf(os.Stderr, "got error while getting compression ratio: %v\n", err)
+			return
+		}
 	}
-	inSize := uint64(inStat.Size())
-
-	outStat, err := outFile.Stat()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "couldn't obtain stat for output file: %v\n", err)
-		return
-	}
-
-	outSize := outStat.Size()
-	ratio := float32(outStat.Size()) / float32(inStat.Size())
-	log.Printf("input size: %v, output size: %v, ratio: %v\n", inSize, outSize, ratio)
 }
