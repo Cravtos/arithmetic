@@ -3,7 +3,6 @@ package arithmetic
 import (
 	"bufio"
 	"errors"
-	"fmt"
 	"os"
 
 	"github.com/cravtos/arithmetic/internal/pkg/config"
@@ -192,8 +191,7 @@ func Decode(in *os.File, out *os.File) (err error) {
 			t.UpdateRanges(0)
 		}
 		if err = w.WriteByte(symbol); err != nil {
-			fmt.Fprintf(os.Stderr, "got error while writting to output file: %v\n", err)
-			return
+			return err
 		}
 	}
 
