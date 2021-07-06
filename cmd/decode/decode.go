@@ -1,22 +1,14 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
+	"github.com/cravtos/arithmetic/internal/pkg/arithmetic"
 	"log"
 	"os"
 	"path/filepath"
-
-	"github.com/icza/bitio"
-	"github.com/cravtos/arithmetic/internal/pkg/config"
-	"github.com/cravtos/arithmetic/internal/pkg/table"
 )
 
-// Interval delimiters
-const top uint64 = (1 << config.IntervalBitsUsed) - 1
-const firstQuart = (top + 1) / 4
-const half = firstQuart * 2
-const thirdQuart = firstQuart * 3
+
 
 func main() {
 
@@ -47,87 +39,11 @@ func main() {
 	}
 	defer outFile.Close()
 
-	in := bitio.NewReader(inFile)
-	out := bufio.NewWriter(outFile)
-	t := table.NewTable()
-
-	// Read header
-	log.Printf("reading header (number of encoded symbols)")
-	var nEncoded uint64
-	if nEncoded, err = in.ReadBits(64); err != nil {
-		fmt.Fprintf(os.Stderr, "couldn't read header from input file: %v\n", err)
-		return
-	}
-	log.Printf("got number of encoded symbols: %v\n", nEncoded)
-
-	// Begin decompressing
-	log.Println("starting decompression")
-	value, err := in.ReadBits(config.IntervalBitsUsed)
+	err = arithmetic.Decode(inFile, outFile)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "got error while reading input file (first %v bits): %v\n", config.IntervalBitsUsed, err)
+		fmt.Fprintf(os.Stderr, "got error while decoding: %v\n", err)
 		return
 	}
-
-	l := uint64(0)
-	h := top
-	for i := uint64(1); i <= nEncoded; i++ {
-		denom := t.GetInterval(table.ABCSize - 1)
-
-		delta := h - l + 1
-		interval := ((value-l+1)*denom - 1) / delta
-		symbol := t.GetSymbol(interval)
-
-		h = l + t.GetInterval(int(symbol))*delta/denom - 1
-		l = l + t.GetInterval(int(symbol)-1)*delta/denom
-
-		for {
-			if h < half {
-				// do nothing
-			} else if l >= half {
-				l -= half
-				h -= half
-				value -= half
-			} else if l >= firstQuart && h < thirdQuart {
-				l -= firstQuart
-				h -= firstQuart
-				value -= firstQuart
-			} else {
-				break
-			}
-			l <<= 1
-			h <<= 1
-			h += 1
-
-			inBit, err := in.ReadBits(1)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "got error while reading input file (on %v symbol): %v\n", i, err)
-				return
-			}
-			value <<= 1
-			value |= inBit & 1
-
-			if l&top != l || h&top != h || value&top != value {
-				_, _ = fmt.Fprintln(os.Stderr, "got overflow")
-				return
-			}
-		}
-
-		t.UpdateCount(symbol)
-		if i%config.UpdateRangesRate == 0 {
-			t.UpdateRanges(0)
-		}
-		if err = out.WriteByte(symbol); err != nil {
-			fmt.Fprintf(os.Stderr, "got error while writting to output file: %v\n", err)
-			return
-		}
-	}
-
-	if err = out.Flush(); err != nil {
-		fmt.Fprintf(os.Stderr, "got error while flushing output file: %v\n", err)
-		return
-	}
-
-	log.Println("finished. see", outFilePath)
 
 	// Get information for header
 	inStat, err := inFile.Stat()
